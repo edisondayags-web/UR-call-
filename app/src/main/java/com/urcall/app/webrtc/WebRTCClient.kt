@@ -23,9 +23,9 @@ class WebRTCClient(context: Context) {
 
         // TODO: palitan mo 'to ng sarili mong TURN server para guaranteed maka-connect
         // kahit gaano ka-restrictive ang network ng dalawang tumatawag.
-        private const val TURN_SERVER_URL = ""
-        private const val TURN_USERNAME = ""
-        private const val TURN_PASSWORD = ""
+        private const val TURN_SERVER_URL = "turn:standard.relay.metered.ca:80"
+        private const val TURN_USERNAME = "202fa5c74a1d43fa246a489f"
+        private const val TURN_PASSWORD = "QuEhwBfVSQGuUP1I"
     }
 
     private val eglBase = EglBase.create()
