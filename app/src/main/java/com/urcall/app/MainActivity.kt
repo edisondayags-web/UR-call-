@@ -2,6 +2,7 @@ package com.urcall.app
 
 import android.Manifest
 import android.os.Bundle
+import com.urcall.app.webrtc.AuthManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,6 +21,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AuthManager.signInIfNeeded { }
         micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
 
         setContent {
