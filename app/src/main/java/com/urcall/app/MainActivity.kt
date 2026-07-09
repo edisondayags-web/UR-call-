@@ -2,7 +2,6 @@ package com.urcall.app
 
 import android.Manifest
 import android.os.Bundle
-import com.urcall.app.webrtc.AuthManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,6 +12,8 @@ import com.urcall.app.ui.AddContactScreen
 import com.urcall.app.ui.CallScreen
 import com.urcall.app.ui.ContactsScreen
 import com.urcall.app.ui.theme.URCallTheme
+import com.urcall.app.webrtc.AuthManager
+import com.urcall.app.webrtc.PresenceManager
 
 class MainActivity : ComponentActivity() {
 
@@ -21,8 +22,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        AuthManager.signInIfNeeded { }
         micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+
+        AuthManager.signInIfNeeded {
+            PresenceManager.startPresenceTracking(this)
+        }
 
         setContent {
             URCallTheme {

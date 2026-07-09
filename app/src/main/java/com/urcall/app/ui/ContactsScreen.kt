@@ -18,26 +18,52 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.urcall.app.data.Contact
 import com.urcall.app.ui.theme.*
+import com.urcall.app.webrtc.AuthManager
+import com.urcall.app.webrtc.ContactsRepository
+import com.urcall.app.webrtc.PresenceManager
+import com.urcall.app.webrtc.ProfileManager
 
 @Composable
 fun ContactsScreen(
     onAddClick: () -> Unit,
     onCallClick: (String) -> Unit
 ) {
-    // TODO: palitan mo 'to ng totoong list galing Firebase (contacts/{myUid}/*)
-    val contacts = remember {
-        listOf(
-            Contact(uid = "1", name = "Maya", isOnline = true),
-            Contact(uid = "2", name = "Liam", isOnline = false),
-            Contact(uid = "3", name = "Zara", isOnline = true),
-            Contact(uid = "4", name = "Noah", isOnline = false),
-            Contact(uid = "5", name = "Eli", isOnline = true)
-        )
+    var contacts by remember { mutableStateOf<List<Contact>>(emptyList()) }
+    val onlineStatus = remember { mutableStateMapOf<String, Boolean>() }
+    var searchQuery by remember { mutableStateOf("") }
+    var showSearch by remember { mutableStateOf(false) }
+    var myUrCallId by remember { mutableStateOf("") }
+    var showProfileDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        AuthManager.signInIfNeeded { uid ->
+            ProfileManager.ensureProfile(uid) { id -> myUrCallId = id }
+            ContactsRepository.observeMyContacts(uid) { updated ->
+                contacts = updated
+                updated.forEach { contact ->
+                    PresenceManager.observeContactStatus(contact.uid) { online ->
+                        onlineStatus[contact.uid] = online
+                    }
+                }
+            }
+        }
+    }
+
+    val visibleContacts = if (searchQuery.isBlank()) {
+        contacts
+    } else {
+        contacts.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
+
+    if (showProfileDialog) {
+        MyProfileDialog(urCallId = myUrCallId, onDismiss = { showProfileDialog = false })
     }
 
     Box(
@@ -55,13 +81,22 @@ fun ContactsScreen(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp, vertical = 24.dp)
         ) {
-            // Top row: profile icon (left) + add contact icon (right)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconBox(icon = Icons.Outlined.Person, size = 48.dp)
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color(0x22000000))
+                        .border(1.dp, UrNeon.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+                        .clickable { showProfileDialog = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Outlined.Person, contentDescription = "Sariling profile mo", tint = UrNeon, modifier = Modifier.size(22.dp))
+                }
                 Box(
                     modifier = Modifier
                         .size(48.dp)
@@ -73,9 +108,9 @@ fun ContactsScreen(
                     Icon(Icons.Filled.Add, contentDescription = "Add contact", tint = UrBlack)
                 }
             }
+
             Spacer(Modifier.height(20.dp))
 
-            // Big glowing call button + search/dialpad/filter row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -97,39 +132,154 @@ fun ContactsScreen(
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    IconBox(icon = Icons.Outlined.Search, size = 48.dp)
-                    IconBox(icon = Icons.Outlined.GridView, size = 48.dp)
-                    IconBox(icon = Icons.Filled.FilterList, size = 48.dp)
+                    IconBox(icon = Icons.Outlined.Search, onClick = { showSearch = !showSearch })
+                    IconBox(icon = Icons.Outlined.GridView, onClick = { onAddClick() })
+                    IconBox(icon = Icons.Filled.FilterList, onClick = { })
                 }
+            }
+
+            if (showSearch) {
+                Spacer(Modifier.height(14.dp))
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Hanapin ang contact...") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = UrNeon,
+                        unfocusedBorderColor = UrTextGrey,
+                        focusedTextColor = UrTextWhite,
+                        unfocusedTextColor = UrTextWhite
+                    )
+                )
             }
 
             Spacer(Modifier.height(24.dp))
 
-            // Numbered contacts list
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                itemsIndexed(contacts) { index, contact ->
-                    ContactRow(
-                        number = index + 1,
-                        contact = contact,
-                        onCallClick = { onCallClick(contact.uid) }
-                    )
+            if (contacts.isEmpty()) {
+                EmptyContactsState(onAddClick = onAddClick)
+            } else if (visibleContacts.isEmpty()) {
+                Box(modifier = Modifier.fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
+                    Text("Walang nahanap na tugma", color = UrTextGrey)
+                }
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    itemsIndexed(visibleContacts) { index, contact ->
+                        val isOnline = onlineStatus[contact.uid] ?: false
+                        ContactRow(
+                            number = index + 1,
+                            contact = contact.copy(isOnline = isOnline),
+                            onCallClick = { onCallClick(contact.uid) }
+                        )
+                    }
                 }
             }
         }
 
-        // Bottom nav bar
         BottomNavBar(modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
 @Composable
-private fun IconBox(icon: androidx.compose.ui.graphics.vector.ImageVector, size: androidx.compose.ui.unit.Dp) {
+private fun MyProfileDialog(urCallId: String, onDismiss: () -> Unit) {
+    val clipboard = LocalClipboardManager.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = UrBlack,
+        title = { Text("Sarili mong URCall ID", color = UrTextWhite) },
+        text = {
+            Column {
+                Text(
+                    "Ibigay mo 'to sa kaibigan mo para ma-add ka nila:",
+                    color = UrTextGrey,
+                    fontSize = 14.sp
+                )
+                Spacer(Modifier.height(12.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(UrNeon.copy(alpha = 0.12f))
+                        .border(1.dp, UrNeon, RoundedCornerShape(12.dp))
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = urCallId.ifBlank { "..." },
+                        color = UrNeon,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                clipboard.setText(AnnotatedString(urCallId))
+                onDismiss()
+            }) {
+                Text("I-copy", color = UrNeon)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Isara", color = UrTextGrey)
+            }
+        }
+    )
+}
+
+@Composable
+private fun EmptyContactsState(onAddClick: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 60.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            Icons.Outlined.PersonAddAlt,
+            contentDescription = null,
+            tint = UrTextGrey,
+            modifier = Modifier.size(48.dp)
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            "Wala ka pang contact",
+            color = UrTextWhite,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "I-tap ang + sa taas para mag-add gamit ang URCall ID ng kaibigan mo",
+            color = UrTextGrey,
+            fontSize = 14.sp,
+            modifier = Modifier.padding(horizontal = 32.dp)
+        )
+        Spacer(Modifier.height(20.dp))
+        Button(
+            onClick = onAddClick,
+            colors = ButtonDefaults.buttonColors(containerColor = UrNeon, contentColor = UrBlack),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = null)
+            Spacer(Modifier.width(6.dp))
+            Text("Mag-add ng contact", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+@Composable
+private fun IconBox(icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .size(size)
+            .size(48.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(Color(0x22000000))
-            .border(1.dp, UrNeon.copy(alpha = 0.4f), RoundedCornerShape(14.dp)),
+            .border(1.dp, UrNeon.copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+            .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Icon(icon, contentDescription = null, tint = UrNeon, modifier = Modifier.size(22.dp))
@@ -147,7 +297,6 @@ private fun ContactRow(number: Int, contact: Contact, onCallClick: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // number badge
         Box(
             modifier = Modifier
                 .size(28.dp)
@@ -159,7 +308,6 @@ private fun ContactRow(number: Int, contact: Contact, onCallClick: () -> Unit) {
         }
         Spacer(Modifier.width(14.dp))
 
-        // avatar
         Box(
             modifier = Modifier
                 .size(44.dp)
@@ -172,15 +320,20 @@ private fun ContactRow(number: Int, contact: Contact, onCallClick: () -> Unit) {
         }
         Spacer(Modifier.width(14.dp))
 
-        Text(
-            text = contact.name,
-            color = UrTextWhite,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.weight(1f)
-        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = contact.name,
+                color = UrTextWhite,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = if (contact.isOnline) "Naka-on ang data" else "Naka-off ang data",
+                color = if (contact.isOnline) UrNeon else UrTextGrey,
+                fontSize = 12.sp
+            )
+        }
 
-        // call button - only tappable / lit up kung online (naka-on ang data)
         Box(
             modifier = Modifier
                 .size(44.dp)
@@ -217,7 +370,6 @@ private fun BottomNavBar(modifier: Modifier = Modifier) {
     }
 }
 
-// helper for LazyColumn indexed items
 private inline fun androidx.compose.foundation.lazy.LazyListScope.itemsIndexed(
     list: List<Contact>,
     crossinline content: @Composable (Int, Contact) -> Unit
