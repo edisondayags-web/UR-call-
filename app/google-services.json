@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "000000000000",
-    "project_id": "urcall-placeholder",
-    "storage_bucket": "urcall-placeholder.appspot.com"
+    "project_number": "1062440202508",
+    "project_id": "ur-call-4c182",
+    "storage_bucket": "ur-call-4c182.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "mobilesdk_app_id": "1:1062440202508:android:523283ad098bc6e5359929",
         "android_client_info": {
           "package_name": "com.urcall.app"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "PLACEHOLDER_REPLACE_ME"
+          "current_key": "AIzaSyDIjseu6MU90C2fbu-vuTyoaDZDNUxVqqY"
         }
       ],
       "services": {
