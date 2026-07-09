@@ -34,7 +34,7 @@ class MainActivity : ComponentActivity() {
                 NavHost(navController = navController, startDestination = "contacts") {
                     composable("contacts") {
                         ContactsScreen(
-                            onAddClick = { navController.navigate("add_contact") },
+                            onAddClick = { navController.navigate("request_call") },
                             onCallClick = { contactUid -> navController.navigate("call/$contactUid") }
                         )
                     }

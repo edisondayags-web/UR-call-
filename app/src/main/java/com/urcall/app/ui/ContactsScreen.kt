@@ -33,7 +33,8 @@ import com.urcall.app.webrtc.ProfileManager
 @Composable
 fun ContactsScreen(
     onAddClick: () -> Unit,
-    onCallClick: (String) -> Unit
+    onCallClick: (String) -> Unit,
+    onBellClick: () -> Unit
 ) {
     var contacts by remember { mutableStateOf<List<Contact>>(emptyList()) }
     val onlineStatus = remember { mutableStateMapOf<String, Boolean>() }
@@ -52,6 +53,9 @@ fun ContactsScreen(
                         onlineStatus[contact.uid] = online
                     }
                 }
+            }
+            com.urcall.app.webrtc.CallRequestManager.listenForIncomingRequests(uid) { fromUid, _ ->
+                onCallClick(fromUid)
             }
         }
     }
@@ -132,6 +136,7 @@ fun ContactsScreen(
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    IconBox(icon = Icons.Filled.NotificationsActive, onClick = onBellClick)
                     IconBox(icon = Icons.Outlined.Search, onClick = { showSearch = !showSearch })
                     IconBox(icon = Icons.Outlined.GridView, onClick = { onAddClick() })
                     IconBox(icon = Icons.Filled.FilterList, onClick = { })
