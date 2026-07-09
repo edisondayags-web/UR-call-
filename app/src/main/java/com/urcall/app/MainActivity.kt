@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import com.urcall.app.ui.AddContactScreen
 import com.urcall.app.ui.CallScreen
 import com.urcall.app.ui.ContactsScreen
+import com.urcall.app.ui.RequestCallScreen
 import com.urcall.app.ui.theme.URCallTheme
 import com.urcall.app.webrtc.AuthManager
 import com.urcall.app.webrtc.PresenceManager
@@ -35,7 +36,13 @@ class MainActivity : ComponentActivity() {
                     composable("contacts") {
                         ContactsScreen(
                             onAddClick = { navController.navigate("request_call") },
-                            onCallClick = { contactUid -> navController.navigate("call/$contactUid") }
+                            onCallClick = { contactUid -> navController.navigate("call/$contactUid") },
+                            onBellClick = { navController.navigate("request_call") }
+                        )
+                    }
+                    composable("request_call") {
+                        RequestCallScreen(
+                            onRequestSent = { targetUid -> navController.navigate("call/$targetUid") }
                         )
                     }
                     composable("add_contact") {
