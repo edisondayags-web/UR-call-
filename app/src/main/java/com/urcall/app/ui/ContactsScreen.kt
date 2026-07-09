@@ -34,7 +34,8 @@ import com.urcall.app.webrtc.ProfileManager
 fun ContactsScreen(
     onAddClick: () -> Unit,
     onCallClick: (String) -> Unit,
-    onBellClick: () -> Unit
+    onBellClick: () -> Unit,
+    onIncomingCall: (fromUid: String, fromUrCallId: String) -> Unit
 ) {
     var contacts by remember { mutableStateOf<List<Contact>>(emptyList()) }
     val onlineStatus = remember { mutableStateMapOf<String, Boolean>() }
@@ -54,8 +55,8 @@ fun ContactsScreen(
                     }
                 }
             }
-            com.urcall.app.webrtc.CallRequestManager.listenForIncomingRequests(uid) { fromUid, _ ->
-                onCallClick(fromUid)
+            com.urcall.app.webrtc.CallRequestManager.listenForIncomingRequests(uid) { fromUid, fromUrCallId ->
+                onIncomingCall(fromUid, fromUrCallId)
             }
         }
     }
