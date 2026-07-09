@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.URCall" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.URCall" parent="android:Theme.Material.NoActionBar">
         <item name="android:statusBarColor">#0A0002</item>
         <item name="android:windowBackground">#0A0002</item>
     </style>
