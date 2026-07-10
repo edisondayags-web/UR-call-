@@ -1,6 +1,7 @@
 package com.urcall.app
 
 import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,12 +20,17 @@ import com.urcall.app.webrtc.PresenceManager
 
 class MainActivity : ComponentActivity() {
 
-    private val micPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    private val permissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        micPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+
+        val permissions = mutableListOf(Manifest.permission.RECORD_AUDIO)
+        if (Build.VERSION.SDK_INT >= 33) {
+            permissions.add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+        permissionLauncher.launch(permissions.toTypedArray())
 
         AuthManager.signInIfNeeded {
             PresenceManager.startPresenceTracking(this)

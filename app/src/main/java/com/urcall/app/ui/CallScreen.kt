@@ -25,11 +25,6 @@ import com.urcall.app.ui.theme.*
 import org.webrtc.IceCandidate
 import org.webrtc.PeerConnection
 
-/**
- * Ito yung bubungad pag tumawag ka o tinatawagan ka - "UR call" screen.
- * V1: sinisimulan dito yung offer/answer exchange via SignalingManager,
- * tapos binubuksan yung mic audio track papunta sa kausap.
- */
 @Composable
 fun CallScreen(
     contactUid: String,
@@ -40,7 +35,6 @@ fun CallScreen(
     var isOnline by remember { mutableStateOf(false) }
 
     DisposableEffect(contactUid) {
-        // Callid = pinagsamang uid, palaging pareho kung sinong nag-initiate
         val callId = listOf("me_uid_placeholder", contactUid).sorted().joinToString("_")
         val signaling = SignalingManager(callId)
         val webRtc = WebRTCClient(context)
@@ -75,9 +69,12 @@ fun CallScreen(
         signaling.listenForAnswer { answer -> webRtc.setRemoteDescription(answer) }
         signaling.listenForCandidates(isCaller = true) { candidate -> webRtc.addIceCandidate(candidate) }
 
+        com.urcall.app.webrtc.CallForegroundService.start(context)
+
         onDispose {
             webRtc.endCall()
             signaling.endCall()
+            com.urcall.app.webrtc.CallForegroundService.stop(context)
         }
     }
 
