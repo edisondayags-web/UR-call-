@@ -25,8 +25,14 @@ object ProfileManager {
         }
     }
 
+    fun regenerateId(myUid: String, onDone: (newId: String) -> Unit) {
+        val newId = generateUrCallId()
+        FirebaseDatabase.getInstance().getReference("users/$myUid/urCallId")
+            .setValue(newId)
+            .addOnSuccessListener { onDone(newId) }
+    }
+
     private fun generateUrCallId(): String {
-        val chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-        return (1..6).map { chars[Random.nextInt(chars.length)] }.joinToString("")
+        return (1..10).map { Random.nextInt(0, 10) }.joinToString("")
     }
 }

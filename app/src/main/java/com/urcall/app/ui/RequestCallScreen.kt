@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.database.FirebaseDatabase
 import com.urcall.app.ui.theme.*
 import com.urcall.app.webrtc.AuthManager
 import com.urcall.app.webrtc.CallRequestManager
@@ -45,11 +46,7 @@ fun RequestCallScreen(onRequestSent: (targetUid: String) -> Unit) {
             Spacer(Modifier.height(12.dp))
             Text("Mag-request ng Call", color = UrTextWhite, fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(4.dp))
-            Text(
-                "Ipaste ang sariling ID mo at ang ID ng tatawagan mo",
-                color = UrTextGrey,
-                fontSize = 13.sp
-            )
+            Text("Ipaste ang sariling ID mo at ang ID ng tatawagan mo", color = UrTextGrey, fontSize = 13.sp)
             Spacer(Modifier.height(20.dp))
 
             Text("Sarili mong ID", color = UrTextGrey, fontSize = 12.sp)
@@ -98,7 +95,12 @@ fun RequestCallScreen(onRequestSent: (targetUid: String) -> Unit) {
                     CallRequestManager.sendRequest(uid, myUrCallId, targetId) { success, message, targetUid ->
                         isSending = false
                         statusMessage = message
-                        if (success && targetUid != null) onRequestSent(targetUid)
+                        if (success && targetUid != null) {
+                            FirebaseDatabase.getInstance()
+                                .getReference("contacts/$uid/$targetUid")
+                                .setValue(true)
+                            onRequestSent(targetUid)
+                        }
                     }
                 },
                 enabled = !isSending,

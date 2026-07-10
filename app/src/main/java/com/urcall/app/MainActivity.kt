@@ -14,6 +14,7 @@ import com.urcall.app.ui.CallScreen
 import com.urcall.app.ui.ContactsScreen
 import com.urcall.app.ui.IncomingCallScreen
 import com.urcall.app.ui.RequestCallScreen
+import com.urcall.app.ui.SettingsScreen
 import com.urcall.app.ui.theme.URCallTheme
 import com.urcall.app.webrtc.AuthManager
 import com.urcall.app.webrtc.PresenceManager
@@ -47,8 +48,12 @@ class MainActivity : ComponentActivity() {
                             onBellClick = { navController.navigate("request_call") },
                             onIncomingCall = { fromUid, fromUrCallId ->
                                 navController.navigate("incoming_call/$fromUid/$fromUrCallId")
-                            }
+                            },
+                            onSettingsClick = { navController.navigate("settings") }
                         )
+                    }
+                    composable("settings") {
+                        SettingsScreen(onDone = { navController.popBackStack() })
                     }
                     composable("incoming_call/{fromUid}/{fromUrCallId}") { backStackEntry ->
                         val fromUid = backStackEntry.arguments?.getString("fromUid") ?: ""

@@ -35,7 +35,8 @@ fun ContactsScreen(
     onAddClick: () -> Unit,
     onCallClick: (String) -> Unit,
     onBellClick: () -> Unit,
-    onIncomingCall: (fromUid: String, fromUrCallId: String) -> Unit
+    onIncomingCall: (fromUid: String, fromUrCallId: String) -> Unit,
+    onSettingsClick: () -> Unit
 ) {
     var contacts by remember { mutableStateOf<List<Contact>>(emptyList()) }
     val onlineStatus = remember { mutableStateMapOf<String, Boolean>() }
@@ -61,31 +62,25 @@ fun ContactsScreen(
         }
     }
 
-    val visibleContacts = if (searchQuery.isBlank()) {
-        contacts
-    } else {
-        contacts.filter { it.name.contains(searchQuery, ignoreCase = true) }
-    }
+    val visibleContacts = if (searchQuery.isBlank()) contacts else contacts.filter { it.name.contains(searchQuery, ignoreCase = true) }
 
     if (showProfileDialog) {
-        MyProfileDialog(urCallId = myUrCallId, onDismiss = { showProfileDialog = false })
+        MyProfileDialog(
+            urCallId = myUrCallId,
+            onDismiss = { showProfileDialog = false },
+            onSettingsClick = {
+                showProfileDialog = false
+                onSettingsClick()
+            }
+        )
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(UrPinkGlow.copy(alpha = 0.35f), UrBlack),
-                    radius = 1200f
-                )
-            )
+            .background(Brush.radialGradient(colors = listOf(UrPinkGlow.copy(alpha = 0.35f), UrBlack), radius = 1200f))
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 20.dp, vertical = 24.dp)
-        ) {
+        Column(modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 24.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -129,17 +124,12 @@ fun ContactsScreen(
                         .border(2.dp, UrNeon, RoundedCornerShape(20.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Filled.Call,
-                        contentDescription = "Dial",
-                        tint = UrNeon,
-                        modifier = Modifier.size(36.dp)
-                    )
+                    Icon(Icons.Filled.Call, contentDescription = "Dial", tint = UrNeon, modifier = Modifier.size(36.dp))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     IconBox(icon = Icons.Filled.NotificationsActive, onClick = onBellClick)
                     IconBox(icon = Icons.Outlined.Search, onClick = { showSearch = !showSearch })
-                    IconBox(icon = Icons.Outlined.GridView, onClick = { onAddClick() })
+                    IconBox(icon = Icons.Outlined.Settings, onClick = onSettingsClick)
                     IconBox(icon = Icons.Filled.FilterList, onClick = { })
                 }
             }
@@ -188,7 +178,7 @@ fun ContactsScreen(
 }
 
 @Composable
-private fun MyProfileDialog(urCallId: String, onDismiss: () -> Unit) {
+private fun MyProfileDialog(urCallId: String, onDismiss: () -> Unit, onSettingsClick: () -> Unit) {
     val clipboard = LocalClipboardManager.current
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -196,11 +186,7 @@ private fun MyProfileDialog(urCallId: String, onDismiss: () -> Unit) {
         title = { Text("Sarili mong URCall ID", color = UrTextWhite) },
         text = {
             Column {
-                Text(
-                    "Ibigay mo 'to sa kaibigan mo para ma-add ka nila:",
-                    color = UrTextGrey,
-                    fontSize = 14.sp
-                )
+                Text("Ibigay mo 'to sa kaibigan mo para ma-add ka nila:", color = UrTextGrey, fontSize = 14.sp)
                 Spacer(Modifier.height(12.dp))
                 Box(
                     modifier = Modifier
@@ -211,55 +197,34 @@ private fun MyProfileDialog(urCallId: String, onDismiss: () -> Unit) {
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = urCallId.ifBlank { "..." },
-                        color = UrNeon,
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(text = urCallId.ifBlank { "..." }, color = UrNeon, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                }
+                Spacer(Modifier.height(12.dp))
+                TextButton(onClick = onSettingsClick) {
+                    Text("Settings / I-delete ang lumang ID", color = UrPink, fontSize = 13.sp)
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                clipboard.setText(AnnotatedString(urCallId))
-                onDismiss()
-            }) {
+            TextButton(onClick = { clipboard.setText(AnnotatedString(urCallId)); onDismiss() }) {
                 Text("I-copy", color = UrNeon)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Isara", color = UrTextGrey)
-            }
+            TextButton(onClick = onDismiss) { Text("Isara", color = UrTextGrey) }
         }
     )
 }
 
 @Composable
 private fun EmptyContactsState(onAddClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 60.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            Icons.Outlined.PersonAddAlt,
-            contentDescription = null,
-            tint = UrTextGrey,
-            modifier = Modifier.size(48.dp)
-        )
+    Column(modifier = Modifier.fillMaxWidth().padding(top = 60.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(Icons.Outlined.PersonAddAlt, contentDescription = null, tint = UrTextGrey, modifier = Modifier.size(48.dp))
         Spacer(Modifier.height(16.dp))
-        Text(
-            "Wala ka pang contact",
-            color = UrTextWhite,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+        Text("Wala ka pang contact", color = UrTextWhite, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(8.dp))
         Text(
-            "I-tap ang + sa taas para mag-add gamit ang URCall ID ng kaibigan mo",
+            "I-tap ang + o ang bell icon sa taas para mag-add gamit ang URCall ID ng kaibigan mo",
             color = UrTextGrey,
             fontSize = 14.sp,
             modifier = Modifier.padding(horizontal = 32.dp)
@@ -304,10 +269,7 @@ private fun ContactRow(number: Int, contact: Contact, onCallClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
-            modifier = Modifier
-                .size(28.dp)
-                .clip(CircleShape)
-                .border(1.5.dp, UrNeon, CircleShape),
+            modifier = Modifier.size(28.dp).clip(CircleShape).border(1.5.dp, UrNeon, CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(text = "$number", color = UrNeon, fontSize = 13.sp, fontWeight = FontWeight.Bold)
@@ -327,12 +289,7 @@ private fun ContactRow(number: Int, contact: Contact, onCallClick: () -> Unit) {
         Spacer(Modifier.width(14.dp))
 
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = contact.name,
-                color = UrTextWhite,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            Text(text = contact.name, color = UrTextWhite, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             Text(
                 text = if (contact.isOnline) "Naka-on ang data" else "Naka-off ang data",
                 color = if (contact.isOnline) UrNeon else UrTextGrey,
@@ -349,11 +306,7 @@ private fun ContactRow(number: Int, contact: Contact, onCallClick: () -> Unit) {
                 .clickable(enabled = contact.isOnline) { onCallClick() },
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                Icons.Filled.Call,
-                contentDescription = "Call ${contact.name}",
-                tint = if (contact.isOnline) UrNeon else Color(0x66FFFFFF)
-            )
+            Icon(Icons.Filled.Call, contentDescription = "Call ${contact.name}", tint = if (contact.isOnline) UrNeon else Color(0x66FFFFFF))
         }
     }
 }
