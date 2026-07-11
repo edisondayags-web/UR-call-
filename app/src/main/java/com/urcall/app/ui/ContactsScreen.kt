@@ -96,7 +96,7 @@ fun ContactsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(UrBlack.copy(alpha = 0.25f))
+                .background(UrBlack.copy(alpha = 0.85f))
         )
 
         Column(
