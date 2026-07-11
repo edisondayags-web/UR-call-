@@ -49,7 +49,8 @@ class MainActivity : ComponentActivity() {
                             onIncomingCall = { fromUid, fromUrCallId ->
                                 navController.navigate("incoming_call/$fromUid/$fromUrCallId")
                             },
-                            onSettingsClick = { navController.navigate("settings") }
+                            onSettingsClick = { navController.navigate("settings") },
+                            onDialClick = { navController.navigate("dial") }
                         )
                     }
                     composable("settings") {
