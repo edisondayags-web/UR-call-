@@ -40,7 +40,8 @@ fun ContactsScreen(
     onCallClick: (String) -> Unit,
     onBellClick: () -> Unit,
     onIncomingCall: (fromUid: String, fromUrCallId: String) -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onDialClick: () -> Unit
 ) {
     var contacts by remember { mutableStateOf<List<Contact>>(emptyList()) }
     val onlineStatus = remember { mutableStateMapOf<String, Boolean>() }
@@ -144,7 +145,7 @@ fun ContactsScreen(
                         .clip(RoundedCornerShape(20.dp))
                         .background(UrNeon.copy(alpha = 0.12f))
                         .border(2.dp, UrNeon, RoundedCornerShape(20.dp))
-                        .clickable { showSearch = true },
+                        .clickable { onDialClick() },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
