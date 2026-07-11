@@ -12,7 +12,6 @@ import androidx.navigation.compose.rememberNavController
 import com.urcall.app.ui.AddContactScreen
 import com.urcall.app.ui.CallScreen
 import com.urcall.app.ui.ContactsScreen
-import com.urcall.app.ui.DialScreen
 import com.urcall.app.ui.IncomingCallScreen
 import com.urcall.app.ui.RequestCallScreen
 import com.urcall.app.ui.SettingsScreen
@@ -45,19 +44,12 @@ class MainActivity : ComponentActivity() {
                     composable("contacts") {
                         ContactsScreen(
                             onAddClick = { navController.navigate("request_call") },
-                            onCallClick = { contactUid -> navController.navigate("call/$contactUid") },
+                            onCallClick = { contactUid -> navController.navigate("call/$contactUid/true") },
                             onBellClick = { navController.navigate("request_call") },
                             onIncomingCall = { fromUid, fromUrCallId ->
                                 navController.navigate("incoming_call/$fromUid/$fromUrCallId")
                             },
-                            onSettingsClick = { navController.navigate("settings") },
-                            onDialClick = { navController.navigate("dial") }
-                        )
-                    }
-                    composable("dial") {
-                        DialScreen(
-                            onCallClick = { contactUid -> navController.navigate("call/$contactUid") },
-                            onBack = { navController.popBackStack() }
+                            onSettingsClick = { navController.navigate("settings") }
                         )
                     }
                     composable("settings") {
@@ -69,22 +61,24 @@ class MainActivity : ComponentActivity() {
                         IncomingCallScreen(
                             fromUid = fromUid,
                             fromUrCallId = fromUrCallId,
-                            onAccept = { navController.navigate("call/$fromUid") { popUpTo("contacts") } },
+                            onAccept = { navController.navigate("call/$fromUid/false") { popUpTo("contacts") } },
                             onDecline = { navController.popBackStack() }
                         )
                     }
                     composable("request_call") {
                         RequestCallScreen(
-                            onRequestSent = { targetUid -> navController.navigate("call/$targetUid") }
+                            onRequestSent = { targetUid -> navController.navigate("call/$targetUid/true") }
                         )
                     }
                     composable("add_contact") {
                         AddContactScreen(onDone = { navController.popBackStack() })
                     }
-                    composable("call/{contactUid}") { backStackEntry ->
+                    composable("call/{contactUid}/{isCaller}") { backStackEntry ->
                         val contactUid = backStackEntry.arguments?.getString("contactUid") ?: ""
+                        val isCaller = backStackEntry.arguments?.getString("isCaller")?.toBoolean() ?: true
                         CallScreen(
                             contactUid = contactUid,
+                            isCaller = isCaller,
                             onEndCall = { navController.popBackStack() }
                         )
                     }

@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.urcall.app.webrtc.AuthManager
 import com.urcall.app.webrtc.PresenceManager
 import com.urcall.app.webrtc.SignalingManager
 import com.urcall.app.webrtc.WebRTCClient
@@ -28,6 +29,7 @@ import org.webrtc.PeerConnection
 @Composable
 fun CallScreen(
     contactUid: String,
+    isCaller: Boolean,
     onEndCall: () -> Unit
 ) {
     val context = LocalContext.current
@@ -39,7 +41,8 @@ fun CallScreen(
         audioManager.mode = android.media.AudioManager.MODE_IN_COMMUNICATION
         audioManager.isSpeakerphoneOn = true
 
-        val callId = listOf("me_uid_placeholder", contactUid).sorted().joinToString("_")
+        val myUid = AuthManager.currentUid() ?: ""
+        val callId = listOf(myUid, contactUid).sorted().joinToString("_")
         val signaling = SignalingManager(callId)
         val webRtc = WebRTCClient(context)
 
@@ -48,9 +51,9 @@ fun CallScreen(
             status = if (online) "Kumokonekta..." else "Kailangan naka-on ang data niya"
         }
 
-        val peerConnection = webRtc.createPeerConnection(object : PeerConnection.Observer {
+        webRtc.createPeerConnection(object : PeerConnection.Observer {
             override fun onIceCandidate(candidate: IceCandidate) {
-                signaling.sendIceCandidate(candidate, isCaller = true)
+                signaling.sendIceCandidate(candidate, isCaller = isCaller)
             }
             override fun onIceConnectionChange(state: PeerConnection.IceConnectionState) {
                 if (state == PeerConnection.IceConnectionState.CONNECTED) {
@@ -69,9 +72,17 @@ fun CallScreen(
         })
 
         webRtc.addLocalAudioTrack()
-        webRtc.createOffer { offer -> signaling.sendOffer(offer) }
-        signaling.listenForAnswer { answer -> webRtc.setRemoteDescription(answer) }
-        signaling.listenForCandidates(isCaller = true) { candidate -> webRtc.addIceCandidate(candidate) }
+
+        if (isCaller) {
+            webRtc.createOffer { offer -> signaling.sendOffer(offer) }
+            signaling.listenForAnswer { answer -> webRtc.setRemoteDescription(answer) }
+        } else {
+            signaling.listenForOffer { offer ->
+                webRtc.setRemoteDescription(offer)
+                webRtc.createAnswer { answer -> signaling.sendAnswer(answer) }
+            }
+        }
+        signaling.listenForCandidates(isCaller = isCaller) { candidate -> webRtc.addIceCandidate(candidate) }
 
         com.urcall.app.webrtc.CallForegroundService.start(context)
 
