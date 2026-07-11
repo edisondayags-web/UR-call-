@@ -192,8 +192,6 @@ fun ContactsScreen(
             }
         }
 
-        BottomNavBar(modifier = Modifier.align(Alignment.BottomCenter))
-
         Text(
             text = "DEVELOPER: EDISON SUCLATAN DAYAGUIT",
             color = UrTextGrey.copy(alpha = 0.5f),
@@ -377,24 +375,6 @@ private fun ContactRow(number: Int, contact: Contact, onCallClick: () -> Unit) {
                 tint = if (contact.isOnline) UrNeon else Color(0x66FFFFFF)
             )
         }
-    }
-}
-
-@Composable
-private fun BottomNavBar(modifier: Modifier = Modifier) {
-    Row(
-        modifier = modifier
-            .padding(bottom = 20.dp, start = 20.dp, end = 20.dp)
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(30.dp))
-            .background(Color(0xCC000000))
-            .padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        Icon(Icons.Filled.Group, contentDescription = "Contacts", tint = UrNeon)
-        Icon(Icons.Outlined.StarBorder, contentDescription = "Favorites", tint = UrTextGrey)
-        Icon(Icons.Outlined.AccessTime, contentDescription = "Recents", tint = UrTextGrey)
-        Icon(Icons.Outlined.GridView, contentDescription = "Dialpad", tint = UrTextGrey)
     }
 }
 
