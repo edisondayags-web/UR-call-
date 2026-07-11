@@ -1,5 +1,6 @@
 package com.urcall.app.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,11 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.urcall.app.R
 import com.urcall.app.data.Contact
 import com.urcall.app.ui.theme.*
 import com.urcall.app.webrtc.AuthManager
@@ -80,15 +84,20 @@ fun ContactsScreen(
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.radialGradient(
-                    colors = listOf(UrPinkGlow.copy(alpha = 0.35f), UrBlack),
-                    radius = 1200f
-                )
-            )
+        modifier = Modifier.fillMaxSize()
     ) {
+        Image(
+            painter = painterResource(id = R.drawable.bg_image),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(UrBlack.copy(alpha = 0.25f))
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -198,7 +207,7 @@ fun ContactsScreen(
             fontSize = 9.sp,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 4.dp)
+                .padding(bottom = 20.dp)
         )
     }
 }
@@ -318,7 +327,7 @@ private fun ContactRow(number: Int, contact: Contact, onCallClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(Color(0x33000000))
+            .background(Color(0x22000000))
             .border(1.dp, Color(0x33FFFFFF), RoundedCornerShape(18.dp))
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
