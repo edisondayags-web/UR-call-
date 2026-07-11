@@ -35,6 +35,10 @@ fun CallScreen(
     var isOnline by remember { mutableStateOf(false) }
 
     DisposableEffect(contactUid) {
+        val audioManager = context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
+        audioManager.mode = android.media.AudioManager.MODE_IN_COMMUNICATION
+        audioManager.isSpeakerphoneOn = true
+
         val callId = listOf("me_uid_placeholder", contactUid).sorted().joinToString("_")
         val signaling = SignalingManager(callId)
         val webRtc = WebRTCClient(context)
@@ -75,6 +79,8 @@ fun CallScreen(
             webRtc.endCall()
             signaling.endCall()
             com.urcall.app.webrtc.CallForegroundService.stop(context)
+            audioManager.mode = android.media.AudioManager.MODE_NORMAL
+            audioManager.isSpeakerphoneOn = false
         }
     }
 
