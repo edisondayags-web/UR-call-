@@ -192,8 +192,6 @@ fun ContactsScreen(
             }
         }
 
-        BottomNavBar(modifier = Modifier.align(Alignment.BottomCenter))
-
         Text(
             text = "DEVELOPER: EDISON SUCLATAN DAYAGUIT",
             color = UrTextGrey.copy(alpha = 0.5f),
