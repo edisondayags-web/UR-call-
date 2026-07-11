@@ -83,6 +83,7 @@ fun CallScreen(
             }
         }
         signaling.listenForCandidates(isCaller = isCaller) { candidate -> webRtc.addIceCandidate(candidate) }
+        signaling.listenForCallEnded { onEndCall() }
 
         com.urcall.app.webrtc.CallForegroundService.start(context)
 

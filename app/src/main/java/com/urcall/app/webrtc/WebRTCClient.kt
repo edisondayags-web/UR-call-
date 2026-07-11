@@ -3,35 +3,17 @@ package com.urcall.app.webrtc
 import android.content.Context
 import org.webrtc.*
 
-/**
- * Ito na yung tunay na "UR call" engine - dito nangyayari yung audio connection.
- *
- * STUN = tumutulong makahanap ng public IP (libre, galing Google, laging naka-on).
- * TURN = ito yung "ako na bahala sa internet connection mo" - kapag hindi
- *        pwedeng mag-direct connection ang dalawang phone (madalas mangyari sa
- *        mobile data / carrier NAT), dito dadaan ang boses nila, parang relay.
- *
- * WALANG kasamang TURN credentials dito by default - kailangan mong maglagay ng
- * sarili mong TURN server (hal. metered.ca may libreng 20GB/month tier) sa
- * TURN_SERVER_URL / USERNAME / PASSWORD sa baba. Kung STUN lang, gagana sa
- * karamihan pero minsan hindi makaka-connect pag parehong strict yung network.
- */
 class WebRTCClient(context: Context) {
 
     companion object {
         private const val STUN_SERVER = "stun:stun.l.google.com:19302"
-
-        // TODO: palitan mo 'to ng sarili mong TURN server para guaranteed maka-connect
-        // kahit gaano ka-restrictive ang network ng dalawang tumatawag.
         private const val TURN_SERVER_URL = "turn:standard.relay.metered.ca:80"
         private const val TURN_USERNAME = "202fa5c74a1d43fa246a489f"
         private const val TURN_PASSWORD = "QuEhwBfVSQGuUP1I"
     }
 
     private val eglBase = EglBase.create()
-
     private val peerConnectionFactory: PeerConnectionFactory
-
     private var peerConnection: PeerConnection? = null
 
     init {
@@ -51,6 +33,18 @@ class WebRTCClient(context: Context) {
         if (TURN_SERVER_URL.isNotBlank()) {
             servers.add(
                 PeerConnection.IceServer.builder(TURN_SERVER_URL)
+                    .setUsername(TURN_USERNAME)
+                    .setPassword(TURN_PASSWORD)
+                    .createIceServer()
+            )
+            servers.add(
+                PeerConnection.IceServer.builder("turn:standard.relay.metered.ca:80?transport=tcp")
+                    .setUsername(TURN_USERNAME)
+                    .setPassword(TURN_PASSWORD)
+                    .createIceServer()
+            )
+            servers.add(
+                PeerConnection.IceServer.builder("turns:standard.relay.metered.ca:443?transport=tcp")
                     .setUsername(TURN_USERNAME)
                     .setPassword(TURN_PASSWORD)
                     .createIceServer()
@@ -110,7 +104,6 @@ class WebRTCClient(context: Context) {
     }
 }
 
-/** Simpleng adapter para hindi na kailangan i-override lahat ng SdpObserver methods paulit-ulit. */
 open class SdpAdapter : SdpObserver {
     override fun onCreateSuccess(sdp: SessionDescription?) {}
     override fun onSetSuccess() {}

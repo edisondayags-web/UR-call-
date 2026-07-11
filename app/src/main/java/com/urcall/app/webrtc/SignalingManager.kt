@@ -7,16 +7,6 @@ import com.google.firebase.database.ValueEventListener
 import org.webrtc.IceCandidate
 import org.webrtc.SessionDescription
 
-/**
- * Ito yung "signaling" - parang telepono operator noon: hindi siya yung tumatawag,
- * pero siya ang kumokonekta sa dalawang linya bago sila mag-usap directly.
- *
- * Gamit natin ang Firebase Realtime Database bilang signaling channel kasi:
- *  - wala kang kailangang ihost na hiwalay na server
- *  - Firebase mismo yung "cloud" mo dito, at mabilis kahit mahinang data
- *
- * Flow: calls/{callId}/offer, calls/{callId}/answer, calls/{callId}/callerCandidates, calleeCandidates
- */
 class SignalingManager(private val callId: String) {
 
     private val callRef = FirebaseDatabase.getInstance().getReference("calls/$callId")
@@ -69,6 +59,20 @@ class SignalingManager(private val callId: String) {
                     val sdpMLineIndex = child.child("sdpMLineIndex").getValue(Int::class.java) ?: continue
                     val candidate = child.child("candidate").getValue(String::class.java) ?: continue
                     onCandidate(IceCandidate(sdpMid, sdpMLineIndex, candidate))
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
+
+    fun listenForCallEnded(onEnded: () -> Unit) {
+        var wasActive = false
+        callRef.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    wasActive = true
+                } else if (wasActive) {
+                    onEnded()
                 }
             }
             override fun onCancelled(error: DatabaseError) {}
