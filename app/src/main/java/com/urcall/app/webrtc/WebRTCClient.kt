@@ -16,6 +16,10 @@ class WebRTCClient(context: Context) {
     private val peerConnectionFactory: PeerConnectionFactory
     private var peerConnection: PeerConnection? = null
 
+    // ---- Echo Test (local loopback, no signaling/TURN needed) ----
+    private var echoPc1: PeerConnection? = null
+    private var echoPc2: PeerConnection? = null
+
     init {
         PeerConnectionFactory.initialize(
             PeerConnectionFactory.InitializationOptions.builder(context)
@@ -101,6 +105,91 @@ class WebRTCClient(context: Context) {
     fun endCall() {
         peerConnection?.close()
         peerConnection = null
+    }
+
+    /**
+     * Starts a local loopback "echo test": creates two PeerConnections inside
+     * this same app instance, wires their SDP/ICE directly to each other
+     * (no Firebase signaling, no TURN needed), and streams your mic audio
+     * from pc1 -> pc2. If your mic/audio pipeline works, you will hear your
+     * own voice come back through the speaker.
+     */
+    fun startEchoTest(onStatus: (String) -> Unit) {
+        val rtcConfig = PeerConnection.RTCConfiguration(
+            listOf(PeerConnection.IceServer.builder(STUN_SERVER).createIceServer())
+        ).apply { sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN }
+
+        val pc2Observer = object : PeerConnection.Observer {
+            override fun onIceCandidate(candidate: IceCandidate?) {
+                candidate ?: return
+                echoPc1?.addIceCandidate(candidate)
+            }
+            override fun onAddStream(stream: MediaStream?) {
+                onStatus("Echo: audio track connected, you should hear yourself")
+            }
+            override fun onSignalingChange(state: PeerConnection.SignalingState?) {}
+            override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
+                onStatus("Echo ICE state: $state")
+            }
+            override fun onIceConnectionReceivingChange(receiving: Boolean) {}
+            override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {}
+            override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
+            override fun onRemoveStream(stream: MediaStream?) {}
+            override fun onDataChannel(channel: DataChannel?) {}
+            override fun onRenegotiationNeeded() {}
+            override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) {
+                onStatus("Echo: remote track added, playback should start")
+            }
+        }
+
+        val pc1Observer = object : PeerConnection.Observer {
+            override fun onIceCandidate(candidate: IceCandidate?) {
+                candidate ?: return
+                echoPc2?.addIceCandidate(candidate)
+            }
+            override fun onAddStream(stream: MediaStream?) {}
+            override fun onSignalingChange(state: PeerConnection.SignalingState?) {}
+            override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {}
+            override fun onIceConnectionReceivingChange(receiving: Boolean) {}
+            override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {}
+            override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
+            override fun onRemoveStream(stream: MediaStream?) {}
+            override fun onDataChannel(channel: DataChannel?) {}
+            override fun onRenegotiationNeeded() {}
+            override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) {}
+        }
+
+        echoPc1 = peerConnectionFactory.createPeerConnection(rtcConfig, pc1Observer)
+        echoPc2 = peerConnectionFactory.createPeerConnection(rtcConfig, pc2Observer)
+
+        val audioSource = peerConnectionFactory.createAudioSource(MediaConstraints())
+        val localAudioTrack = peerConnectionFactory.createAudioTrack("ECHO_AUDIO", audioSource)
+        echoPc1?.addTrack(localAudioTrack)
+
+        val constraints = MediaConstraints()
+        echoPc1?.createOffer(object : SdpAdapter() {
+            override fun onCreateSuccess(offerSdp: SessionDescription?) {
+                offerSdp ?: return
+                echoPc1?.setLocalDescription(SdpAdapter(), offerSdp)
+                echoPc2?.setRemoteDescription(SdpAdapter(), offerSdp)
+
+                echoPc2?.createAnswer(object : SdpAdapter() {
+                    override fun onCreateSuccess(answerSdp: SessionDescription?) {
+                        answerSdp ?: return
+                        echoPc2?.setLocalDescription(SdpAdapter(), answerSdp)
+                        echoPc1?.setRemoteDescription(SdpAdapter(), answerSdp)
+                        onStatus("Echo test started — speak now and listen")
+                    }
+                }, constraints)
+            }
+        }, constraints)
+    }
+
+    fun stopEchoTest() {
+        echoPc1?.close()
+        echoPc2?.close()
+        echoPc1 = null
+        echoPc2 = null
     }
 }
 

@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,15 +25,21 @@ import com.urcall.app.ui.theme.*
 import com.urcall.app.webrtc.AuthManager
 import com.urcall.app.webrtc.ContactsRepository
 import com.urcall.app.webrtc.PresenceManager
+import com.urcall.app.webrtc.WebRTCClient
 
 @Composable
 fun DialScreen(
     onCallClick: (String) -> Unit,
     onBack: () -> Unit
 ) {
+    val context = LocalContext.current
     var contacts by remember { mutableStateOf<List<Contact>>(emptyList()) }
     val onlineStatus = remember { mutableStateMapOf<String, Boolean>() }
     var searchQuery by remember { mutableStateOf("") }
+
+    var echoClient by remember { mutableStateOf<WebRTCClient?>(null) }
+    var echoRunning by remember { mutableStateOf(false) }
+    var echoStatus by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         AuthManager.signInIfNeeded { uid ->
@@ -44,6 +51,12 @@ fun DialScreen(
                     }
                 }
             }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            echoClient?.stopEchoTest()
         }
     }
 
@@ -69,13 +82,55 @@ fun DialScreen(
                         .size(40.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Color(0x22000000))
-                        .clickable { onBack() },
+                        .clickable {
+                            echoClient?.stopEchoTest()
+                            onBack()
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(Icons.Filled.ArrowBack, contentDescription = "Balik", tint = UrNeon)
                 }
                 Spacer(Modifier.width(12.dp))
                 Text("Tumawag", color = UrTextWhite, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0x2200FFC2))
+                    .border(1.dp, UrNeon, RoundedCornerShape(14.dp))
+                    .clickable {
+                        if (!echoRunning) {
+                            val client = WebRTCClient(context)
+                            echoClient = client
+                            client.startEchoTest { status ->
+                                echoStatus = status
+                            }
+                            echoRunning = true
+                        } else {
+                            echoClient?.stopEchoTest()
+                            echoRunning = false
+                            echoStatus = "Echo test tapos na"
+                        }
+                    }
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.Mic, contentDescription = null, tint = UrNeon)
+                Spacer(Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        if (echoRunning) "I-stop ang Echo Test" else "Echo Test",
+                        color = UrTextWhite, fontSize = 15.sp, fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        if (echoStatus.isNotBlank()) echoStatus else "Subukan ang mic, marinig ang sarili mong boses",
+                        color = UrTextGrey, fontSize = 11.sp
+                    )
+                }
             }
 
             Spacer(Modifier.height(16.dp))

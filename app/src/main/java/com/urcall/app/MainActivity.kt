@@ -12,6 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.urcall.app.ui.AddContactScreen
 import com.urcall.app.ui.CallScreen
 import com.urcall.app.ui.ContactsScreen
+import com.urcall.app.ui.DialScreen
 import com.urcall.app.ui.IncomingCallScreen
 import com.urcall.app.ui.RequestCallScreen
 import com.urcall.app.ui.SettingsScreen
@@ -51,6 +52,12 @@ class MainActivity : ComponentActivity() {
                             },
                             onSettingsClick = { navController.navigate("settings") },
                             onDialClick = { navController.navigate("dial") }
+                        )
+                    }
+                    composable("dial") {
+                        DialScreen(
+                            onCallClick = { contactUid -> navController.navigate("call/$contactUid/true") },
+                            onBack = { navController.popBackStack() }
                         )
                     }
                     composable("settings") {
