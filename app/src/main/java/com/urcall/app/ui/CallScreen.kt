@@ -35,8 +35,18 @@ fun CallScreen(
     val context = LocalContext.current
     var status by remember { mutableStateOf("Kumokonekta...") }
     var isOnline by remember { mutableStateOf(false) }
+    var micDenied by remember { mutableStateOf(false) }
 
     DisposableEffect(contactUid) {
+        val hasMicPermission = androidx.core.content.ContextCompat.checkSelfPermission(
+            context, android.Manifest.permission.RECORD_AUDIO
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+
+        if (!hasMicPermission) {
+            micDenied = true
+            return@DisposableEffect onDispose {}
+        }
+
         val audioManager = context.getSystemService(android.content.Context.AUDIO_SERVICE) as android.media.AudioManager
         audioManager.mode = android.media.AudioManager.MODE_IN_COMMUNICATION
         audioManager.isSpeakerphoneOn = true
@@ -116,7 +126,11 @@ fun CallScreen(
             Spacer(Modifier.height(20.dp))
             Text("UR Call", color = UrTextWhite, fontSize = 22.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
-            Text(status, color = UrTextGrey, fontSize = 15.sp)
+            Text(
+                if (micDenied) "Kailangan ng mic permission - buksan sa Settings ng phone mo" else status,
+                color = if (micDenied) UrPink else UrTextGrey,
+                fontSize = 15.sp
+            )
 
             Spacer(Modifier.height(60.dp))
 
