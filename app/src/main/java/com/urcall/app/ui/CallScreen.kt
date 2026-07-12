@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -56,6 +57,7 @@ fun CallScreen(
 
     var audioManagerRef by remember { mutableStateOf<android.media.AudioManager?>(null) }
 
+    // Live call timer — only ticks once actually connected, resets to 00:00 otherwise
     LaunchedEffect(isConnected) {
         if (isConnected) {
             elapsedSeconds = 0
@@ -150,6 +152,7 @@ fun CallScreen(
             .fillMaxSize()
             .background(Brush.radialGradient(listOf(UrPinkGlow.copy(alpha = 0.4f), UrBlack)))
     ) {
+        // Top bar: back + overflow
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -284,6 +287,7 @@ fun CallScreen(
             Text("Hang Up", color = UrTextGrey, fontSize = 13.sp)
         }
 
+        // Call info panel
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
