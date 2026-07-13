@@ -107,9 +107,8 @@ fun SettingsScreen(onDone: () -> Unit) {
             TextButton(onClick = onDone) {
                 Text("Bumalik", color = UrTextGrey)
             }
-        }
-    }
-}
+        
+
 Spacer(Modifier.height(20.dp))
 Button(onClick = {
     val uid = AuthManager.currentUid() ?: return@Button
@@ -121,4 +120,3 @@ Button(onClick = {
 }) {
     Text("Test Incoming Call (Debug)")
    }
-}
