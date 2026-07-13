@@ -110,3 +110,14 @@ fun SettingsScreen(onDone: () -> Unit) {
         }
     }
 }
+Spacer(Modifier.height(20.dp))
+Button(onClick = {
+    val uid = AuthManager.currentUid() ?: return@Button
+    ProfileManager.ensureProfile(uid) { myUrCallId ->
+        CallRequestManager.sendTestRequestToSelf(uid, myUrCallId) { success, message ->
+            // pwede mong ipakita sa Toast o Text kung gusto
+        }
+    }
+}) {
+    Text("Test Incoming Call (Debug)")
+}
