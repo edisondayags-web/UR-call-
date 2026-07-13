@@ -66,4 +66,24 @@ object CallRequestManager {
     fun clearRequest(myUid: String, fromUid: String) {
         FirebaseDatabase.getInstance().getReference("callRequests/$myUid/$fromUid").removeValue()
     }
+fun sendTestRequestToSelf(
+        myUid: String,
+        myUrCallId: String,
+        onResult: (success: Boolean, message: String) -> Unit
+    ) {
+        FirebaseDatabase.getInstance()
+            .getReference("callRequests/$myUid/$myUid")
+            .setValue(
+                mapOf(
+                    "fromUrCallId" to myUrCallId,
+                    "timestamp" to ServerValue.TIMESTAMP
+                )
+            )
+            .addOnSuccessListener {
+                onResult(true, "Naipadala ang test call sa sarili mo")
+            }
+            .addOnFailureListener {
+                onResult(false, "May error, subukan ulit")
+            }
+    }
 }
