@@ -192,7 +192,104 @@ class WebRTCClient(context: Context) {
         echoPc2 = null
     }
 }
+// ---- Firebase Loopback Test (real signaling path, two peers, one phone) ----
+    private var loopPc1: PeerConnection? = null
+    private var loopPc2: PeerConnection? = null
 
+    fun startFirebaseLoopbackTest(
+        signalingCaller: com.urcall.app.webrtc.SignalingManager,
+        signalingCallee: com.urcall.app.webrtc.SignalingManager,
+        onStatus: (String) -> Unit
+    ) {
+        val rtcConfig = PeerConnection.RTCConfiguration(iceServers()).apply {
+            sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN
+        }
+
+        // Caller side peer connection
+        loopPc1 = peerConnectionFactory.createPeerConnection(rtcConfig, object : PeerConnection.Observer {
+            override fun onIceCandidate(candidate: IceCandidate?) {
+                candidate ?: return
+                signalingCaller.sendIceCandidate(candidate, isCaller = true)
+            }
+            override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
+                onStatus("Caller ICE state: $state")
+            }
+            override fun onAddStream(stream: MediaStream?) {}
+            override fun onSignalingChange(state: PeerConnection.SignalingState?) {}
+            override fun onIceConnectionReceivingChange(receiving: Boolean) {}
+            override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {}
+            override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
+            override fun onRemoveStream(stream: MediaStream?) {}
+            override fun onDataChannel(channel: DataChannel?) {}
+            override fun onRenegotiationNeeded() {}
+            override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) {}
+        })
+
+        // Callee side peer connection
+        loopPc2 = peerConnectionFactory.createPeerConnection(rtcConfig, object : PeerConnection.Observer {
+            override fun onIceCandidate(candidate: IceCandidate?) {
+                candidate ?: return
+                signalingCallee.sendIceCandidate(candidate, isCaller = false)
+            }
+            override fun onIceConnectionChange(state: PeerConnection.IceConnectionState?) {
+                onStatus("Callee ICE state: $state")
+            }
+            override fun onAddStream(stream: MediaStream?) {
+                onStatus("Loopback: audio connected, dapat marinig mo na")
+            }
+            override fun onSignalingChange(state: PeerConnection.SignalingState?) {}
+            override fun onIceConnectionReceivingChange(receiving: Boolean) {}
+            override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {}
+            override fun onIceCandidatesRemoved(candidates: Array<out IceCandidate>?) {}
+            override fun onRemoveStream(stream: MediaStream?) {}
+            override fun onDataChannel(channel: DataChannel?) {}
+            override fun onRenegotiationNeeded() {}
+            override fun onAddTrack(receiver: RtpReceiver?, streams: Array<out MediaStream>?) {
+                onStatus("Loopback: remote track added")
+            }
+        })
+
+        // Audio track from mic goes into the caller side
+        val audioSource = peerConnectionFactory.createAudioSource(MediaConstraints())
+        val localAudioTrack = peerConnectionFactory.createAudioTrack("LOOPBACK_AUDIO", audioSource)
+        loopPc1?.addTrack(localAudioTrack)
+
+        // Listen for the answer on the caller side
+        signalingCaller.listenForAnswer { answer -> loopPc1?.setRemoteDescription(SdpAdapter(), answer) }
+        signalingCaller.listenForCandidates(isCaller = true) { candidate -> loopPc1?.addIceCandidate(candidate) }
+
+        // Listen for the offer on the callee side, then answer it
+        signalingCallee.listenForOffer { offer ->
+            loopPc2?.setRemoteDescription(SdpAdapter(), offer)
+            val constraints = MediaConstraints()
+            loopPc2?.createAnswer(object : SdpAdapter() {
+                override fun onCreateSuccess(sdp: SessionDescription?) {
+                    sdp ?: return
+                    loopPc2?.setLocalDescription(SdpAdapter(), sdp)
+                    signalingCallee.sendAnswer(sdp)
+                }
+            }, constraints)
+        }
+        signalingCallee.listenForCandidates(isCaller = false) { candidate -> loopPc2?.addIceCandidate(candidate) }
+
+        // Kick off: caller creates and sends the offer
+        val constraints = MediaConstraints()
+        loopPc1?.createOffer(object : SdpAdapter() {
+            override fun onCreateSuccess(sdp: SessionDescription?) {
+                sdp ?: return
+                loopPc1?.setLocalDescription(SdpAdapter(), sdp)
+                signalingCaller.sendOffer(sdp)
+                onStatus("Loopback test started — kumokonekta na...")
+            }
+        }, constraints)
+    }
+
+    fun stopFirebaseLoopbackTest() {
+        loopPc1?.close()
+        loopPc2?.close()
+        loopPc1 = null
+        loopPc2 = null
+    }
 open class SdpAdapter : SdpObserver {
     override fun onCreateSuccess(sdp: SessionDescription?) {}
     override fun onSetSuccess() {}
