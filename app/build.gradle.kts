@@ -15,9 +15,8 @@ signingConfigs {
             keyPassword = System.getenv("KEY_PASSWORD")
         }
     }
-}
 
-    defaultConfig {
+     defaultConfig {
         applicationId = "com.urcall.app"
         minSdk = 24
         targetSdk = 34
