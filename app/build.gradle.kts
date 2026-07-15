@@ -7,6 +7,15 @@ plugins {
 android {
     namespace = "com.urcall.app"
     compileSdk = 34
+signingConfigs {
+        create("release") {
+            storeFile = file("urcall-release.keystore")
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
+}
 
     defaultConfig {
         applicationId = "com.urcall.app"
@@ -19,8 +28,13 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
+        }
+    debug {
+            signingConfig = signingConfigs.getByName("release")
         }
     }
+
 
     buildFeatures {
         compose = true
