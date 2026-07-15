@@ -191,7 +191,7 @@ class WebRTCClient(context: Context) {
         echoPc1 = null
         echoPc2 = null
     }
-}
+
 // ---- Firebase Loopback Test (real signaling path, two peers, one phone) ----
     private var loopPc1: PeerConnection? = null
     private var loopPc2: PeerConnection? = null
@@ -290,6 +290,7 @@ class WebRTCClient(context: Context) {
         loopPc1 = null
         loopPc2 = null
     }
+}
 open class SdpAdapter : SdpObserver {
     override fun onCreateSuccess(sdp: SessionDescription?) {}
     override fun onSetSuccess() {}
